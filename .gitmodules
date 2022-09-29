@@ -1,3 +1,6 @@
 [submodule "_external/glfw"]
 	path = _external/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "zigsg/pkgs/microui"]
+	path = zigsg/pkgs/microui
+	url = https://github.com/ousttrue/microui.git
