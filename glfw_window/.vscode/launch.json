@@ -12,7 +12,12 @@
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "${workspaceFolder}\\..\\zigsg\\zig-out\\lib;${env:PATH}"
+                }
+            ],
             "console": "integratedTerminal"
         }
     ]

@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "glfw_window"
+		},
+		{
+			"path": "zigsg"
 		}
 	],
 	"settings": {}

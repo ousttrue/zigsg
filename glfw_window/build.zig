@@ -6,30 +6,25 @@ const c_pkg = std.build.Pkg{
 };
 
 const GLFW_BASE = "../_external/glfw";
+
+// for glfw-3.3
 const GLFW_SOURCES = .{
     GLFW_BASE ++ "/src/context.c",
     GLFW_BASE ++ "/src/init.c",
     GLFW_BASE ++ "/src/input.c",
     GLFW_BASE ++ "/src/monitor.c",
-    GLFW_BASE ++ "/src/platform.c",
-    GLFW_BASE ++ "/src/egl_context.c",
-    GLFW_BASE ++ "/src/null_init.c",
-    GLFW_BASE ++ "/src/null_monitor.c",
-    GLFW_BASE ++ "/src/null_window.c",
-    GLFW_BASE ++ "/src/null_joystick.c",
-    GLFW_BASE ++ "/src/osmesa_context.c",
     GLFW_BASE ++ "/src/vulkan.c",
     GLFW_BASE ++ "/src/window.c",
-
     //
     GLFW_BASE ++ "/src/win32_init.c",
     GLFW_BASE ++ "/src/win32_joystick.c",
     GLFW_BASE ++ "/src/win32_monitor.c",
-    GLFW_BASE ++ "/src/win32_module.c",
     GLFW_BASE ++ "/src/win32_time.c",
     GLFW_BASE ++ "/src/win32_thread.c",
     GLFW_BASE ++ "/src/win32_window.c",
     GLFW_BASE ++ "/src/wgl_context.c",
+    GLFW_BASE ++ "/src/egl_context.c",
+    GLFW_BASE ++ "/src/osmesa_context.c",
 };
 const GLFW_FLAGS = .{
     "-std=c99",
@@ -62,6 +57,8 @@ pub fn build(b: *std.build.Builder) void {
 
     build_glfw(exe);
     exe.linkLibC();
+    exe.addLibraryPath("../zigsg/zig-out/lib");
+    exe.linkSystemLibrary("zigsg");
 
     exe.install();
 
