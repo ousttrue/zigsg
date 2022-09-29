@@ -8,7 +8,7 @@
             "name": "pdb",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/zig-out/bin/exe.exe",
+            "program": "${workspaceFolder}/zig-out/bin/glfw_window.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
