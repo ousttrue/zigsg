@@ -5,6 +5,16 @@ const zigmui_pkg = std.build.Pkg{
     .source = .{ .path = "pkgs/microui/zig_renderer/pkgs/zigmui/main.zig" },
 };
 
+const gl_pkg = std.build.Pkg{
+    .name = "gl",
+    .source = .{ .path = "pkgs/microui/zig_renderer/pkgs/gl_placeholder/main.zig" },
+};
+
+const atlas_pkg = std.build.Pkg{
+    .name = "atlas",
+    .source = .{ .path = "pkgs/microui/zig_renderer/pkgs/atlas/main.zig" },
+};
+
 const GLFW_BASE = "../_external/glfw";
 
 pub fn build(b: *std.build.Builder) void {
@@ -18,6 +28,8 @@ pub fn build(b: *std.build.Builder) void {
     lib.setBuildMode(mode);
     lib.setTarget(target);
     lib.addPackage(zigmui_pkg);
+    lib.addPackage(gl_pkg);
+    lib.addPackage(atlas_pkg);
     if (target.cpu_arch == std.Target.Cpu.Arch.wasm32) {
         lib.stack_size = 6 * 1024 * 1024;
     } else {
@@ -25,7 +37,7 @@ pub fn build(b: *std.build.Builder) void {
         lib.linkLibCpp();
         lib.addIncludePath(GLFW_BASE ++ "/deps");
         lib.addCSourceFile(GLFW_BASE ++ "/deps/glad_gl.c", &.{});
-        lib.addCSourceFile("pkgs/microui/zig_renderer/src/glad_placeholders.c", &.{"-Wno-int-conversion"});
+        lib.addCSourceFile("pkgs/microui/zig_renderer/pkgs/gl_placeholder/gl_placeholder.c", &.{"-Wno-int-conversion"});
     }
     lib.install();
 
