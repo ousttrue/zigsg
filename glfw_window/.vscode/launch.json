@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/zig-out/bin/glfw_window.exe",
             "args": [
-                "${env:GLTF_SAMPLE_MODELS}/2.0/Box/glTF/Box.gltf",
+                "${env:GLTF_SAMPLE_MODELS}/2.0/Box/glTF-Binary/Box.glb",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

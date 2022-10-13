@@ -10,6 +10,7 @@ var g_ctx: ?*zigmui.Context = null;
 var g_gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
 var g_allocator: std.mem.Allocator = undefined;
 var g_renderer: ?Renderer = null;
+var g_scene: ?*scene.Scene = null;
 
 export fn ENGINE_init(p: *const anyopaque) callconv(.C) void {
     g_gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -26,13 +27,18 @@ export fn ENGINE_init(p: *const anyopaque) callconv(.C) void {
     g_renderer = Renderer.init(p, atlas.width, atlas.height, atlas.data);
 
     // load model
+    var pScene = scene.Scene.new(g_allocator);
+    g_scene = pScene;
     var it = std.process.ArgIterator.initWithAllocator(g_allocator) catch unreachable;
     defer it.deinit();
     // arg0
     _ = it.next();
     // arg1
     if (it.next()) |arg| {
-        scene.load_path(arg);
+        if(scene.Model.load(g_allocator, arg))|model|
+        {
+            pScene.model = model;
+        }
     }
 }
 

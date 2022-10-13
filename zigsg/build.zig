@@ -21,9 +21,21 @@ const zigmui_impl_gl_pkg = std.build.Pkg{
     .dependencies = &.{ zigmui_pkg, gl_pkg, atlas_pkg },
 };
 
+const zigla_pkg = std.build.Pkg{
+    .name = "zigla",
+    .source = .{ .path = "pkgs/zigla/src/main.zig" },
+};
+
+const glo_pkg = std.build.Pkg{
+    .name = "glo",
+    .source = .{ .path = "pkgs/glo/src/main.zig" },
+    .dependencies = &.{gl_pkg},
+};
+
 const scene_pkg = std.build.Pkg{
     .name = "scene",
-    .source = .{ .path = "pkgs/scene/main.zig" },
+    .source = .{ .path = "pkgs/scene/src/main.zig" },
+    .dependencies = &.{ zigla_pkg, glo_pkg },
 };
 
 const GLFW_BASE = "../_external/glfw";
