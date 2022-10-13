@@ -82,6 +82,7 @@ pub fn main() !void {
 
     ENGINE_init(c.glfwGetProcAddress);
 
+    // setup glfw callbacks
     _ = c.glfwSetCursorPosCallback(window, cursor_position_callback);
     _ = c.glfwSetMouseButtonCallback(window, mouse_button_callback);
     _ = c.glfwSetScrollCallback(window, scroll_callback);

@@ -15,6 +15,17 @@ const atlas_pkg = std.build.Pkg{
     .source = .{ .path = "pkgs/microui/zig_renderer/pkgs/atlas/main.zig" },
 };
 
+const zigmui_impl_gl_pkg = std.build.Pkg{
+    .name = "zigmui_impl_gl",
+    .source = .{ .path = "pkgs/microui/zig_renderer/pkgs/zigmui_impl_gl/main.zig" },
+    .dependencies = &.{ zigmui_pkg, gl_pkg, atlas_pkg },
+};
+
+const scene_pkg = std.build.Pkg{
+    .name = "scene",
+    .source = .{ .path = "pkgs/scene/main.zig" },
+};
+
 const GLFW_BASE = "../_external/glfw";
 
 pub fn build(b: *std.build.Builder) void {
@@ -30,6 +41,8 @@ pub fn build(b: *std.build.Builder) void {
     lib.addPackage(zigmui_pkg);
     lib.addPackage(gl_pkg);
     lib.addPackage(atlas_pkg);
+    lib.addPackage(zigmui_impl_gl_pkg);
+    lib.addPackage(scene_pkg);
     if (target.cpu_arch == std.Target.Cpu.Arch.wasm32) {
         lib.stack_size = 6 * 1024 * 1024;
     } else {
