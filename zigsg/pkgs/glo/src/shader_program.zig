@@ -7,13 +7,13 @@ pub fn compile(shader_type: gl.GLuint, src: []const u8) error_handling.ShaderErr
     errdefer gl.deleteShader(handle);
 
     const len = [1]c_int{@intCast(c_int, src.len)};
-    const sources: [1][*c]const u8 = .{&src[0]};
-    gl.shaderSource(handle, 1, &sources, &len);
+    const sources: [1]*const u8 = .{&src[0]};
+    gl.shaderSource(handle, 1, &sources[0], &len[0]);
     gl.compileShader(handle);
 
     var status: gl.GLint = undefined;
-    gl.getShaderiv(handle, gl.COMPILE_STATUS, &status);
-    if (status == gl.TRUE) {
+    gl.getShaderiv(handle, gl.GL_COMPILE_STATUS, &status);
+    if (status == gl.GL_TRUE) {
         return handle;
     }
 
@@ -29,8 +29,8 @@ pub fn link(vs: gl.GLuint, fs: gl.GLuint) error_handling.ShaderError!gl.GLuint {
     gl.attachShader(handle, fs);
     gl.linkProgram(handle);
     var status: gl.GLint = undefined;
-    gl.getProgramiv(handle, gl.LINK_STATUS, &status);
-    if (status == gl.TRUE) {
+    gl.getProgramiv(handle, gl.GL_LINK_STATUS, &status);
+    if (status == gl.GL_TRUE) {
         return handle;
     }
 
@@ -41,16 +41,20 @@ pub fn link(vs: gl.GLuint, fs: gl.GLuint) error_handling.ShaderError!gl.GLuint {
 pub const AttributeLocation = struct {
     const Self = @This();
 
-    name: []const u8,
+    allocator: std.mem.Allocator,
+    name: [:0]const u8,
     location: c_uint,
 
-    pub fn create(program: gl.GLuint, name: []const u8) Self {
-        const location = gl.getAttribLocation(program, &name[0]);
-        std.debug.assert(location != -1);
-        return .{
-            .name = name,
-            .location = @intCast(c_uint, location),
+    pub fn create(allocator: std.mem.Allocator, program: gl.GLuint, name: []const u8) Self {
+        var self = Self{
+            .allocator = allocator,
+            .name = allocator.dupeZ(u8, name) catch unreachable,
+            .location = undefined,
         };
+        const location = gl.getAttribLocation(program, @ptrCast([*:0]const u8, &self.name[0]));
+        std.debug.assert(location != -1);
+        self.location = @intCast(c_uint, location);
+        return self;
     }
 };
 
@@ -74,15 +78,15 @@ pub const Shader = struct {
     const Self = @This();
 
     handle: gl.GLuint,
-    location_map: std.StringHashMap(c_int),
+    location_map: std.StringHashMap(c_uint),
 
     pub fn load(allocator: std.mem.Allocator, vs_src: []const u8, fs_src: []const u8) error_handling.ShaderError!Self {
-        var vs = compile(gl.VERTEX_SHADER, vs_src) catch {
+        var vs = compile(gl.GL_VERTEX_SHADER, vs_src) catch {
             @panic(error_handling.getErrorMessage());
         };
         defer gl.deleteShader(vs);
 
-        var fs = compile(gl.FRAGMENT_SHADER, fs_src) catch {
+        var fs = compile(gl.GL_FRAGMENT_SHADER, fs_src) catch {
             @panic(error_handling.getErrorMessage());
         };
         defer gl.deleteShader(fs);
@@ -92,7 +96,7 @@ pub const Shader = struct {
         };
         return Shader{
             .handle = handle,
-            .location_map = std.StringHashMap(c_int).init(allocator),
+            .location_map = std.StringHashMap(c_uint).init(allocator),
         };
     }
 
@@ -110,20 +114,25 @@ pub const Shader = struct {
         gl.useProgram(0);
     }
 
-    pub fn getLocation(self: *Self, name: []const u8) ?c_int {
+    pub fn getLocation(self: *Self, name: []const u8) ?c_uint {
         if (self.location_map.get(name)) |location| {
             return location;
         }
-        const location = gl.getUniformLocation(self.handle, &name[0]);
+
+        var buf: [128]u8 = .{};
+        std.mem.copy(u8, &buf, name);
+        buf[name.len] = 0;
+
+        const location = gl.getUniformLocation(self.handle, @ptrCast([*:0]const u8, &name[0]));
         if (location < 0) {
             return null;
         }
-        self.location_map.put(name, location) catch @panic("put");
-        return location;
+        self.location_map.put(name, @intCast(c_uint, location)) catch @panic("put");
+        return @intCast(c_uint, location);
     }
 
-    pub fn _setMat4(_: *Self, location: c_int, transpose: bool, value: *const f32) void {
-        gl.uniformMatrix4fv(location, 1, if (transpose) gl.TRUE else gl.FALSE, value);
+    pub fn _setMat4(_: *Self, location: c_uint, transpose: bool, value: *const f32) void {
+        gl.uniformMatrix4fv(location, 1, if (transpose) gl.GL_TRUE else gl.GL_FALSE, value);
     }
 
     pub fn setMat4(self: *Self, name: []const u8, value: *const f32) void {
@@ -132,7 +141,7 @@ pub const Shader = struct {
         }
     }
 
-    pub fn _setVec4(_: *Self, location: c_int, value: *const f32) void {
+    pub fn _setVec4(_: *Self, location: c_uint, value: *const f32) void {
         gl.uniform4fv(location, 1, value);
     }
 
@@ -144,7 +153,7 @@ pub const Shader = struct {
 
     pub fn createVertexLayout(self: *Self, allocator: std.mem.Allocator) []const VertexLayout {
         var count: gl.GLint = undefined;
-        gl.getProgramiv(self.handle, gl.ACTIVE_ATTRIBUTES, &count);
+        gl.getProgramiv(self.handle, gl.GL_ACTIVE_ATTRIBUTES, &count);
         var tmp = allocator.alloc(VertexLayout, @intCast(usize, count)) catch @panic("alloc []VertexLayout");
         defer allocator.free(tmp);
 
@@ -159,11 +168,11 @@ pub const Shader = struct {
             // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGetActiveAttrib.xhtml
             std.debug.assert(size == 1);
             const name = buffer[0..@intCast(usize, length)];
-            const attribute = AttributeLocation.create(self.handle, name);
+            const attribute = AttributeLocation.create(allocator, self.handle, name);
             const itemCount: c_int = switch (gl_type) {
-                gl.FLOAT_VEC2 => 2, // 0x8B50
-                gl.FLOAT_VEC3 => 3, // 0x8B51
-                gl.FLOAT_VEC4 => 4, // 0x8B52
+                gl.GL_FLOAT_VEC2 => 2, // 0x8B50
+                gl.GL_FLOAT_VEC3 => 3, // 0x8B51
+                gl.GL_FLOAT_VEC4 => 4, // 0x8B52
                 else => {
                     std.log.err("gl_type: 0x{x}", .{gl_type});
                     @panic("not implemented");

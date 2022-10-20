@@ -5,12 +5,14 @@ const atlas = @import("atlas");
 const gl = @import("gl");
 const Renderer = @import("zigmui_impl_gl").Renderer;
 const scene = @import("scene");
+const zigla = @import("zigla");
 
 var g_ctx: ?*zigmui.Context = null;
 var g_gpa: std.heap.GeneralPurposeAllocator(.{}) = undefined;
 var g_allocator: std.mem.Allocator = undefined;
 var g_renderer: ?Renderer = null;
 var g_scene: ?*scene.Scene = null;
+var g_camera: zigla.Camera = .{};
 
 export fn ENGINE_init(p: *const anyopaque) callconv(.C) void {
     g_gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -35,8 +37,7 @@ export fn ENGINE_init(p: *const anyopaque) callconv(.C) void {
     _ = it.next();
     // arg1
     if (it.next()) |arg| {
-        if(scene.Model.load(g_allocator, arg))|model|
-        {
+        if (scene.Model.load(g_allocator, arg)) |model| {
             pScene.model = model;
         }
     }
@@ -146,6 +147,9 @@ export fn ENGINE_render(width: c_int, height: c_int) callconv(.C) zigmui.CURSOR_
     gl.clear(gl.GL_COLOR_BUFFER_BIT);
 
     // render scene
+    if (g_scene) |sc| {
+        sc.render(&g_camera);
+    }
 
     if (g_renderer) |*r| {
         r.redner_zigmui(width, height, command);

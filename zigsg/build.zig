@@ -55,6 +55,7 @@ pub fn build(b: *std.build.Builder) void {
     lib.addPackage(atlas_pkg);
     lib.addPackage(zigmui_impl_gl_pkg);
     lib.addPackage(scene_pkg);
+    lib.addPackage(zigla_pkg);
     if (target.cpu_arch == std.Target.Cpu.Arch.wasm32) {
         lib.stack_size = 6 * 1024 * 1024;
     } else {
